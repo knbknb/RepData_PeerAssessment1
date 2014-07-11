@@ -15,4 +15,4 @@ markdown** document that can be processed by **knitr** and be
 transformed into an HTML file.
 
 
-For details see the [https://github.com/rdpeng/RepData_PeerAssessment1.git] (original repo) where this was forked from.
+For details see the README.md in the original repo where this repo was forked from, [https://github.com/rdpeng/RepData_PeerAssessment1.git] .
