@@ -2,7 +2,7 @@
 
 
 This repo contains code, data and plots for a hommework assignment. 
-The class/course is called "reproducoble research" from Coursera,  
+The class/course is called ["Reproducible Research"][1] from Coursera.  
 
 This assignment makes use of data from a personal activity monitoring
 device. This device collects data at 5 minute intervals through out the
@@ -16,3 +16,5 @@ transformed into an HTML file.
 
 
 For details see the README.md in the original repo where this repo was forked from, [https://github.com/rdpeng/RepData_PeerAssessment1.git] .
+
+[1]: https://class.coursera.org/repdata-004/
