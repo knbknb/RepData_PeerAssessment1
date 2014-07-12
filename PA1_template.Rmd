@@ -1,20 +1,84 @@
 # Reproducible Research: Peer Assessment 1
 
+The instructions for this  assignment can be found on this page:
+[https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).  
+Please read this first for context and details.
+
+Calculated with R 3.1.0, for details see bottom of report.
+
 
 ## Loading and preprocessing the data
 
+- Set working directory, 
+- Read in data, ignoring cases with "NA" values
+- Converting the "date" column to Date datatype
+
+```{r}
+
+setwd("/home/knut/Documents/coursera/datascience/5-reprod-research/RepData_PeerAssessment1")
+
+act <- read.csv("activity.csv", header=TRUE, na.strings=c("NA"))
 
 
-## What is mean total number of steps taken per day?
+actf <- act[which(act$steps >= 0),]
+actf$date <- as.Date(actf$date)
+
+
+```
+
+ These are the number of NA values in each column:
+```{r}
+colSums(is.na(act));nas_per_column
+```
 
 
 
-## What is the average daily activity pattern?
+### The mean of steps per each day can be calculated as follows:
+```{r}
+library(plyr)
+
+actfagg <- ddply(actf, .(date), summarize,  sumsteps = round(sum(steps), 0))
+head(actfagg, 10)
+
+```
+### The mean and median total number of steps taken per day are very similar.
+Mean:
+```{r}
+
+mean_steps_per_day <- round(mean(actfagg$sumsteps),0); mean_steps_per_day
+
+```
+
+Median:
+```{r}
+median_steps_per_day <- round(median(actfagg$sumsteps),0); median_steps_per_day
+```
+### Steps per day visualised as a histogram:
+```{r hist}
+
+hist(actfagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main="Daily physical activity of an anonymous person in 2012")
 
 
+```
 
-## Imputing missing values
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+To answer  this question, we add a new column to the filtered `act` data frame.  
+This column will contain the weekday encoded as a number.
+
+```{r}
+
+library(lubridate)
+act$wkday <- wday(act$date)
+
+```
+
+
+# R Session Info:
+
+```{r}
+sessionInfo()
+```
