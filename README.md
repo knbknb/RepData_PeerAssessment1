@@ -11,7 +11,7 @@ individual collected during the months of October and November, 2012
 and include the number of steps taken in 5 minute intervals each day.
 
 The entire assignment is to provide a **single R
-markdown** document that can be processed by **knitr** that can be transformed into a markdown file and then into an HTML file.
+markdown** document that can be processed by **knitr**, and that document can be transformed into a markdown file and then into an HTML file.
 
 
 For details see the README.md in the original repo where this repo was forked from, https://github.com/rdpeng/RepData_PeerAssessment1.git .
