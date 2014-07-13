@@ -1,10 +1,11 @@
-# Reproducible Research: Peer Assessment 1
+# Reproducible Research: 
+# Peer Assessment 1
 
-Knut Behrends
-knb@gfz-potsdam.de
-July 2014
+Knut Behrends  
+knb@gfz-potsdam.de  
+July 2014  
 
-The instructions for this  assignment can be found on this page:
+The instructions for this  assignment can be found on this page: 
 [https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).  
 Please read this first for context and details.
 
@@ -36,7 +37,7 @@ act <- read.csv("activity.csv", header=TRUE, na.strings=c("NA"))
 colSums(is.na(act));
 ```
 
-Preparing a new data frame, NA values removed:
+Preparing a new data frame, all rows with NA values removed:
 ```{r}
 
 act$date <- as.Date(act$date)
@@ -103,21 +104,20 @@ actfagg3 <- ddply(actf, .(interval), summarize,  meansteps = round(sum(steps)/ n
 head(actfagg3[which(actfagg3$meansteps > 10),], 10)
 ```
 
-## This is the interval of the day during which, on average, user made the highest number of steps:
+### This is the interval of the day during which, on average, user made the highest number of steps:
 ```{r}
 
 intvmax <- actfagg3[which.max(actfagg3$meansteps),]; intvmax
-#duration_minutes_past_midnight <- dminutes(intvmax$interval * 5)
-#ymd(today()) + duration_minutes_past_midnight
-#actfmax <- ddply(actf, .(interval), summarize,  maxsteps = max(steps))
-#actfmax[which.max(actfmax$maxsteps),]
+
 ```
 
 
 
-A time series plot:
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+This can be visualized with a time series plot.
+
 
 ### Plotting daily averages of steps made, using filtered data:
 
@@ -142,16 +142,32 @@ makePlot(on.weekend, on.workday)
 
 The plots show that the user started to move around later during the day on weekends, compared to his/her activity during the workweek.
 
-## The maximum of the daily averages of the 5-minute intervals
-The maximum of the daily averages of the 5-minute intervals is n = `r max(on.weekend$mean_weekend_steps, on.workday$mean_workday_steps )`.
+### The maximum of the daily averages of the 5-minute intervals
+The maximum of the daily averages of the 5-minute intervals is interval n = `r on.weekend[which.max(on.weekend$mean_weekend_steps),]$interval` ,  `r max(on.weekend$mean_weekend_steps, on.workday$mean_workday_steps )`.
 
 
 ## Coping with missing data
-Now we're plotting daily averages of steps made, using unfiltered data.  
-To this end, we'll substitute NA values with the value for the median steps per day (`r sprintf("%0.0f", median_steps_per_day)`), determined above:
+
+
+To this end, we'll substitute NA values with the value for the mean steps per day (`r sprintf("%0.0f", mean_steps_per_day)`), determined above.  
+
 ```{r}
 bad <- is.na(act$steps)
 act[bad, "steps"] <- mean_steps_per_day/length(unique(act$date))
+
+actagg <- ddply(act, .(date), summarize,  sumsteps = round(sum(steps), 0))
+
+
+
+strtit <- paste0("Daily physical activity of an anonymous person in Oct-Nov 2012", "\n", " NAs substituted with daily averages")
+hist(actagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main=strtit)
+```
+
+The plot shows that there the newly assigned values produce asingle new bin to the far right of the histogram,  for all thos, however the shape of the histogram is not distorted much, and mean and median are still nearly unchanged.
+Now we're plotting daily averages of steps made, using unfiltered data.  
+
+
+```{r}
 
 nintv <- length(unique(act$interval));
 
@@ -164,11 +180,11 @@ days.workweek <- act[! (wday(act$date) %in% c(6,1)),]
 nworkdays <- nrow(days.workweek)/nintv
 on.workday <- ddply(days.workweek, .(interval), summarize,  mean_workday_steps = round((sum(steps)/nworkdays), 0))
 
-makePlot(on.weekend, on.workday,"missing data replaced with daily averages")
+makePlot(on.weekend, on.workday,"missing data replaced with daily median value")
 
 ```
 
-# R Session Info:
+### R Session Info:
 
 ```{r}
 sessionInfo()
