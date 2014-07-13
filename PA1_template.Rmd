@@ -1,10 +1,14 @@
 # Reproducible Research: Peer Assessment 1
 
+Knut Behrends
+knb@gfz-potsdam.de
+July 2014
+
 The instructions for this  assignment can be found on this page:
 [https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).  
 Please read this first for context and details.
 
-Calculated with R 3.1.0, for details see bottom of report.
+Calculated with R 3.1.0, for details about the software used, see bottom of report.
 
 
 ## Loading and preprocessing the data
@@ -15,27 +19,36 @@ Calculated with R 3.1.0, for details see bottom of report.
 
 ```{r}
 
+library(lubridate)
+library(plyr)
+
 setwd("/home/knut/Documents/coursera/datascience/5-reprod-research/RepData_PeerAssessment1")
 
+source("makePlot.R")
+
 act <- read.csv("activity.csv", header=TRUE, na.strings=c("NA"))
-
-
-actf <- act[which(act$steps >= 0),]
-actf$date <- as.Date(actf$date)
-
 
 ```
 
  These are the number of NA values in each column:
+
 ```{r}
-colSums(is.na(act));nas_per_column
+colSums(is.na(act));
+```
+
+Preparing a new data frame, NA values removed:
+```{r}
+
+act$date <- as.Date(act$date)
+actf <- act[which(act$steps >= 0),]
+
+
+
 ```
 
 
-
-### The mean of steps per each day can be calculated as follows:
+### The total number of steps per each day can be calculated as follows:
 ```{r}
-library(plyr)
 
 actfagg <- ddply(actf, .(date), summarize,  sumsteps = round(sum(steps), 0))
 head(actfagg, 10)
@@ -51,31 +64,109 @@ mean_steps_per_day <- round(mean(actfagg$sumsteps),0); mean_steps_per_day
 
 Median:
 ```{r}
-median_steps_per_day <- round(median(actfagg$sumsteps),0); median_steps_per_day
+median_steps_per_day <<- round(median(actfagg$sumsteps),0); median_steps_per_day
 ```
 ### Steps per day visualised as a histogram:
+
+
 ```{r hist}
+strtit <- "Daily physical activity of an anonymous person in Oct-Nov 2012"
+hist(actfagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main=strtit)
 
-hist(actfagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main="Daily physical activity of an anonymous person in 2012")
+abline(v= mean_steps_per_day, lwd =2, col="blue")
+abline(v= median_steps_per_day, lwd =1, col="red")
+```
+
+In the plot above, the mean value of n = `r mean_steps_per_day` is shown as a blue line, the median as a red line.
 
 
+### The mean of steps per interval-of-the-day can be calculated as follows.
+We assume that there are the same number of 5-Minute-Intervals per measurement day. There are 
+```{r}
+nintv <- length(unique(actf$interval)); nintv
+```
+
+intervals per day. 
+After summing up all the steps taken during each interval, we have to normalize each sum by this value.
+```{r}
+
+actfagg3 <- ddply(actf, .(interval), summarize,  meansteps = round(sum(steps)/ nintv, 0))
+
+
+```
+ 
+
+
+
+```{r echo=FALSE,return=FALSE}
+# Some sample data for ddays where the average of steps taken is above 10:
+head(actfagg3[which(actfagg3$meansteps > 10),], 10)
+```
+
+## This is the interval of the day during which, on average, user made the highest number of steps:
+```{r}
+
+intvmax <- actfagg3[which.max(actfagg3$meansteps),]; intvmax
+#duration_minutes_past_midnight <- dminutes(intvmax$interval * 5)
+#ymd(today()) + duration_minutes_past_midnight
+#actfmax <- ddply(actf, .(interval), summarize,  maxsteps = max(steps))
+#actfmax[which.max(actfmax$maxsteps),]
 ```
 
 
 
+A time series plot:
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-To answer  this question, we add a new column to the filtered `act` data frame.  
-This column will contain the weekday encoded as a number.
+### Plotting daily averages of steps made, using filtered data:
 
 ```{r}
 
-library(lubridate)
-act$wkday <- wday(act$date)
+nintv <- length(unique(actf$interval));
+
+
+days.weekend <- actf[(wday(actf$date) %in% c(6,1)),];
+nweekenddays <- nrow(days.weekend)/nintv;
+on.weekend <-  ddply(days.weekend, .(interval), summarize,  mean_weekend_steps = round(sum(steps)/nweekenddays, 0)) ;
+
+days.workweek <- actf[! (wday(actf$date) %in% c(6,1)),]
+nworkdays <- nrow(days.workweek)/nintv
+on.workday <- ddply(days.workweek, .(interval), summarize,  mean_workday_steps = round((sum(steps)/nworkdays), 0))
+
+
+        
+makePlot(on.weekend, on.workday)
 
 ```
 
+The plots show that the user started to move around later during the day on weekends, compared to his/her activity during the workweek.
+
+## The maximum of the daily averages of the 5-minute intervals
+The maximum of the daily averages of the 5-minute intervals is n = `r max(on.weekend$mean_weekend_steps, on.workday$mean_workday_steps )`.
+
+
+## Coping with missing data
+Now we're plotting daily averages of steps made, using unfiltered data.  
+To this end, we'll substitute NA values with the value for the median steps per day (`r sprintf("%0.0f", median_steps_per_day)`), determined above:
+```{r}
+bad <- is.na(act$steps)
+act[bad, "steps"] <- mean_steps_per_day/length(unique(act$date))
+
+nintv <- length(unique(act$interval));
+
+
+days.weekend <- act[(wday(act$date) %in% c(6,1)),];
+nweekenddays <- nrow(days.weekend)/nintv;
+on.weekend <-  ddply(days.weekend, .(interval), summarize,  mean_weekend_steps = round(sum(steps)/nweekenddays, 0)) ;
+
+days.workweek <- act[! (wday(act$date) %in% c(6,1)),]
+nworkdays <- nrow(days.workweek)/nintv
+on.workday <- ddply(days.workweek, .(interval), summarize,  mean_workday_steps = round((sum(steps)/nworkdays), 0))
+
+makePlot(on.weekend, on.workday,"missing data replaced with daily averages")
+
+```
 
 # R Session Info:
 

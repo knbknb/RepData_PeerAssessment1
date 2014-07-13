@@ -20,21 +20,18 @@ setwd("/home/knut/Documents/coursera/datascience/5-reprod-research/RepData_PeerA
 act <- read.csv("activity.csv", header=TRUE, na.strings=c("NA"))
 
 
-act <- act[which(act$steps >= 0),]
-
-
-act$date <- as.Date(act$date)
+actf <- act[which(act$steps >= 0),]
+actf$date <- as.Date(actf$date)
 ```
 
  These are the number of NA values in each column:
 
 ```r
-nas_per_column <- colSums(is.na(act));nas_per_column
+colSums(is.na(act));nas_per_column
 ```
 
 ```
-##    steps     date interval 
-##        0        0        0
+## Error: object 'nas_per_column' not found
 ```
 
 
@@ -44,8 +41,8 @@ nas_per_column <- colSums(is.na(act));nas_per_column
 ```r
 library(plyr)
 
-actagg <- ddply(act, .(date), summarize,  sumsteps = round(sum(steps), 0))
-head(actagg, 10)
+actfagg <- ddply(actf, .(date), summarize,  sumsteps = round(sum(steps), 0))
+head(actfagg, 10)
 ```
 
 ```
@@ -61,39 +58,69 @@ head(actagg, 10)
 ## 9  2012-10-11    10304
 ## 10 2012-10-12    17382
 ```
-### The mean and median total number of steps taken per day are very similar:
+### The mean and median total number of steps taken per day are very similar.
+Mean:
 
 ```r
-mean_steps_per_day <- round(mean(actagg$sumsteps),0); mean_steps_per_day
+mean_steps_per_day <- round(mean(actfagg$sumsteps),0); mean_steps_per_day
 ```
 
 ```
 ## [1] 10766
 ```
 
+Median:
+
 ```r
-median_steps_per_day <- round(median(actagg$sumsteps),0); median_steps_per_day
+median_steps_per_day <- round(median(actfagg$sumsteps),0); median_steps_per_day
 ```
 
 ```
 ## [1] 10765
 ```
-### Visualised as a histogram:
+### Steps per day visualised as a histogram:
+
+
 
 ```r
-hist(actagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main="Daily physical activity of an anonymous person in 2012")
+strtit <- "Daily physical activity of an anonymous person in Oct-Nov 2012"
+hist(actfagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main=strtit)
+
+abline(v= mean_steps_per_day, lwd =2, col="blue")
 ```
 
 ![plot of chunk hist](figure/hist.png) 
 
+In the plot above, the mean value of n = 1.0766 &times; 10<sup>4</sup> is shown as a blue line.
+
+
+### The mean of steps per interval-of-the-day can be calculated as follows.
+We assume that there are the same number of 5-Minute-Intervals per measurement day. There are nintv = 53 intervals. After summing up all the steps taken during each interval, we have to normalize each sum by this value.
+
+```r
+library(plyr)
+
+actfagg3 <- ddply(actf, .(interval), summarize,  meansteps = round(sum(steps)/ nintv, 0))
+```
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
 
-To answer  this question, we add a new column to the filtered `act` data frame.  
-This column will contain the weekday.
+```
+##    interval meansteps
+## 69      540        16
+## 70      545        18
+## 71      550        39
+## 72      555        44
+## 73      600        31
+## 74      605        49
+## 75      610        54
+## 76      615        63
+## 77      620        50
+## 78      625        47
+```
 
+## This is the interval of the day during which, on average, user made the highest number of steps:
 
 ```r
 library(lubridate)
@@ -109,6 +136,40 @@ library(lubridate)
 ```
 
 ```r
+intvmax <- actfagg3[which.max(actfagg3$meansteps),]; intvmax
+```
+
+```
+##     interval meansteps
+## 104      835       206
+```
+
+```r
+duration_minutes_past_midnight <- dminutes(intvmax$interval * 5)
+today() + duration_minutes_past_midnight
+```
+
+```
+## [1] "2014-07-15 21:35:00 UTC"
+```
+
+```r
+#actfmax <- ddply(actf, .(interval), summarize,  maxsteps = max(steps))
+#actfmax[which.max(actfmax$maxsteps),]
+```
+
+
+
+A time series plot:
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+To answer  this question, we add a new column to the filtered `act` data frame.  
+This column will contain the weekday encoded as a number.
+
+
+```r
+library(lubridate)
 act$wkday <- wday(act$date)
 ```
 
