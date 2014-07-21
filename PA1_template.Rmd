@@ -9,6 +9,7 @@ The instructions for this  assignment can be found on this page:
 [https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).  
 Please read this first for context and details.
 
+
 Calculated with R 3.1.0, for details about the software used, see bottom of report.
 
 

@@ -1,10 +1,16 @@
-# Reproducible Research: Peer Assessment 1
+# Reproducible Research: 
+# Peer Assessment 1
 
-The instructions for this  assignment can be found on this page:
+Knut Behrends  
+knb@gfz-potsdam.de  
+July 2014  
+
+The instructions for this  assignment can be found on this page: 
 [https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).  
 Please read this first for context and details.
 
-Calculated with R 3.1.0, for details see bottom of report.
+
+Calculated with R 3.1.0, for details about the software used, see bottom of report.
 
 
 ## Loading and preprocessing the data
@@ -15,32 +21,39 @@ Calculated with R 3.1.0, for details see bottom of report.
 
 
 ```r
+library(lubridate)
+library(plyr)
+
 setwd("/home/knut/Documents/coursera/datascience/5-reprod-research/RepData_PeerAssessment1")
 
+source("makePlot.R")
+
 act <- read.csv("activity.csv", header=TRUE, na.strings=c("NA"))
-
-
-actf <- act[which(act$steps >= 0),]
-actf$date <- as.Date(actf$date)
 ```
 
  These are the number of NA values in each column:
 
-```r
-colSums(is.na(act));nas_per_column
-```
-
-```
-## Error: object 'nas_per_column' not found
-```
-
-
-
-### The mean of steps per each day can be calculated as follows:
 
 ```r
-library(plyr)
+colSums(is.na(act));
+```
 
+```
+##    steps     date interval 
+##     2304        0        0
+```
+
+Preparing a new data frame, all rows with NA values removed:
+
+```r
+act$date <- as.Date(act$date)
+actf <- act[which(act$steps >= 0),]
+```
+
+
+### The total number of steps per each day can be calculated as follows:
+
+```r
 actfagg <- ddply(actf, .(date), summarize,  sumsteps = round(sum(steps), 0))
 head(actfagg, 10)
 ```
@@ -72,7 +85,7 @@ mean_steps_per_day <- round(mean(actfagg$sumsteps),0); mean_steps_per_day
 Median:
 
 ```r
-median_steps_per_day <- round(median(actfagg$sumsteps),0); median_steps_per_day
+median_steps_per_day <<- round(median(actfagg$sumsteps),0); median_steps_per_day
 ```
 
 ```
@@ -87,53 +100,51 @@ strtit <- "Daily physical activity of an anonymous person in Oct-Nov 2012"
 hist(actfagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main=strtit)
 
 abline(v= mean_steps_per_day, lwd =2, col="blue")
+abline(v= median_steps_per_day, lwd =1, col="red")
 ```
 
 ![plot of chunk hist](figure/hist.png) 
 
-In the plot above, the mean value of n = 1.0766 &times; 10<sup>4</sup> is shown as a blue line.
+In the plot above, the mean value of n = 1.0766 &times; 10<sup>4</sup> is shown as a blue line, the median as a red line.
 
 
 ### The mean of steps per interval-of-the-day can be calculated as follows.
-We assume that there are the same number of 5-Minute-Intervals per measurement day. There are nintv = 53 intervals. After summing up all the steps taken during each interval, we have to normalize each sum by this value.
+We assume that there are the same number of 5-Minute-Intervals per measurement day. There are 
 
 ```r
-library(plyr)
+nintv <- length(unique(actf$interval)); nintv
+```
 
+```
+## [1] 288
+```
+
+intervals per day. 
+After summing up all the steps taken during each interval, we have to normalize each sum by this value.
+
+```r
 actfagg3 <- ddply(actf, .(interval), summarize,  meansteps = round(sum(steps)/ nintv, 0))
 ```
+ 
 
 
 
 
 ```
-##    interval meansteps
-## 69      540        16
-## 70      545        18
-## 71      550        39
-## 72      555        44
-## 73      600        31
-## 74      605        49
-## 75      610        54
-## 76      615        63
-## 77      620        50
-## 78      625        47
+##     interval meansteps
+## 76       615        12
+## 94       745        13
+## 95       750        11
+## 97       800        14
+## 98       805        13
+## 99       810        24
+## 100      815        29
+## 101      820        31
+## 102      825        29
+## 103      830        33
 ```
 
-## This is the interval of the day during which, on average, user made the highest number of steps:
-
-```r
-library(lubridate)
-```
-
-```
-## 
-## Attaching package: 'lubridate'
-## 
-## The following object is masked from 'package:plyr':
-## 
-##     here
-```
+### This is the interval of the day during which, on average, user made the highest number of steps:
 
 ```r
 intvmax <- actfagg3[which.max(actfagg3$meansteps),]; intvmax
@@ -141,40 +152,87 @@ intvmax <- actfagg3[which.max(actfagg3$meansteps),]; intvmax
 
 ```
 ##     interval meansteps
-## 104      835       206
-```
-
-```r
-duration_minutes_past_midnight <- dminutes(intvmax$interval * 5)
-today() + duration_minutes_past_midnight
-```
-
-```
-## [1] "2014-07-15 21:35:00 UTC"
-```
-
-```r
-#actfmax <- ddply(actf, .(interval), summarize,  maxsteps = max(steps))
-#actfmax[which.max(actfmax$maxsteps),]
+## 104      835        38
 ```
 
 
 
-A time series plot:
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-To answer  this question, we add a new column to the filtered `act` data frame.  
-This column will contain the weekday encoded as a number.
+This can be visualized with a time series plot.
+
+
+### Plotting daily averages of steps made, using filtered data:
 
 
 ```r
-library(lubridate)
-act$wkday <- wday(act$date)
+nintv <- length(unique(actf$interval));
+
+
+days.weekend <- actf[(wday(actf$date) %in% c(6,1)),];
+nweekenddays <- nrow(days.weekend)/nintv;
+on.weekend <-  ddply(days.weekend, .(interval), summarize,  mean_weekend_steps = round(sum(steps)/nweekenddays, 0)) ;
+
+days.workweek <- actf[! (wday(actf$date) %in% c(6,1)),]
+nworkdays <- nrow(days.workweek)/nintv
+on.workday <- ddply(days.workweek, .(interval), summarize,  mean_workday_steps = round((sum(steps)/nworkdays), 0))
+
+        
+makePlot(on.weekend, on.workday)
 ```
 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
 
-# R Session Info:
+The plots show that the user started to move around later during the day on weekends, compared to his/her activity during the workweek.
+
+### The maximum of the daily averages of the 5-minute intervals
+The maximum of the daily averages of the 5-minute intervals is interval n = 850 ,  218.
+
+
+## Coping with missing data
+
+
+To this end, we'll substitute NA values with the value for the mean steps per day (10766), determined above.  
+
+
+```r
+bad <- is.na(act$steps)
+act[bad, "steps"] <- mean_steps_per_day/length(unique(act$date))
+
+actagg <- ddply(act, .(date), summarize,  sumsteps = round(sum(steps), 0))
+
+
+
+strtit <- paste0("Daily physical activity of an anonymous person in Oct-Nov 2012", "\n", " NAs substituted with daily averages")
+hist(actagg$sumsteps,  breaks=20, xlab="Number of steps walked per day", ylab="Frequency of days", main=strtit)
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+
+The plot shows that there the newly assigned values produce asingle new bin to the far right of the histogram,  for all thos, however the shape of the histogram is not distorted much, and mean and median are still nearly unchanged.
+Now we're plotting daily averages of steps made, using unfiltered data.  
+
+
+
+```r
+nintv <- length(unique(act$interval));
+
+
+days.weekend <- act[(wday(act$date) %in% c(6,1)),];
+nweekenddays <- nrow(days.weekend)/nintv;
+on.weekend <-  ddply(days.weekend, .(interval), summarize,  mean_weekend_steps = round(sum(steps)/nweekenddays, 0)) ;
+
+days.workweek <- act[! (wday(act$date) %in% c(6,1)),]
+nworkdays <- nrow(days.workweek)/nintv
+on.workday <- ddply(days.workweek, .(interval), summarize,  mean_workday_steps = round((sum(steps)/nworkdays), 0))
+
+makePlot(on.weekend, on.workday,"missing data replaced with daily median value")
+```
+
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
+
+### R Session Info:
 
 
 ```r
@@ -197,10 +255,11 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] lubridate_1.3.3 plyr_1.8.1      rj_2.0.2-1      knitr_1.6      
+## [1] plyr_1.8.1      lubridate_1.3.3 rj_2.0.2-1      knitr_1.6      
 ## [5] colorout_1.0-3 
 ## 
 ## loaded via a namespace (and not attached):
-## [1] digest_0.6.4   evaluate_0.5.3 formatR_0.10   memoise_0.2.1 
-## [5] Rcpp_0.11.1    stringr_0.6.2  tools_3.1.0
+##  [1] digest_0.6.4     evaluate_0.5.3   formatR_0.10     htmltools_0.2.4 
+##  [5] memoise_0.2.1    Rcpp_0.11.1      rmarkdown_0.2.49 stringr_0.6.2   
+##  [9] tools_3.1.0      yaml_2.1.13
 ```
