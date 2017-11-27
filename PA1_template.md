@@ -2,7 +2,7 @@
 # Peer Assessment 1
 
 Knut Behrends  
-knb@gfz-potsdam.de  
+
 July 2014  
 
 The instructions for this  assignment can be found on this page: 
